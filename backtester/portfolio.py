@@ -142,7 +142,7 @@ class Portfolio:
         Close every open position at the latest available prices.
         Called at the end of each trading day.
         """
-        # Local import to avoid a circular dependency with strategy.py
+        
         from strategies.strategy import Order
 
         orders = []
