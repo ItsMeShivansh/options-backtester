@@ -1,0 +1,22 @@
+# Minimal gitignore for this Python project
+__pycache__/
+*.py[cod]
+
+# Virtual environments and env files
+myenv/
+.venv/
+env/
+.env
+.env.*
+
+# Editor / IDE
+.vscode/
+
+# macOS
+.DS_Store
+
+# Generated results
+results/
+
+allData/
+
