@@ -68,6 +68,14 @@ After the run finishes, the generated files are saved in `results/`:
 
 Check the `results/` folder in the project root after the run.
 
+## Assumptions & Limitations
+
+- **Perfect Liquidity:** Assumes 100% fill rate at the recorded price with zero slippage.
+- **Gross Returns:** PnL does not account for brokerage, STT, or exchange fees.
+- **Forward-Filled Prices:** If an option doesn't tick in a given second, the engine carries forward its last traded price.
+- **Infinite Margin:** The system executes all generated trades without checking for account balance or margin constraints.
+- **Clean Exits:** Assumes all open positions can be instantly liquidated at the final tick of the day without illiquidity issues.
+
 ## Adding More Strategies
 
 1. Create a new file in `strategies/`, for example `strategies/my_strategy.py`.
