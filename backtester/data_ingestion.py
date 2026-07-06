@@ -2,11 +2,12 @@
 Module 1: 
 
 Reads the raw folder/file structure, parses option filenames using regex,
-filters to the closest-to-current expiry, and returns clean DataFrames.
+filters to the closest-to-current expiry, and returns clean NumPy arrays.
 """
 
 import os
 import re
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
@@ -46,7 +47,7 @@ def find_closest_expiry(trading_date_str, available_expiries):
     available_expiries : set - {'221103', '221110', …}
 
     Returns:
-    str or None - the chosen YYMMDD expiry
+    options_dict : dict  - {(strike, option_type): NumPy array}
     """
     trading_dt = datetime.strptime(trading_date_str, '%Y%m%d')
 
@@ -71,19 +72,25 @@ def _read_tick_csv(filepath):
     - When multiple ticks fall in the same second, keeps only the
       last traded price (standard practice).
 
-    Returns a DataFrame with columns: Datetime, Price, Volume, OI.
+    Returns a NumPy array with columns:
+        Second, Price, Volume, OI
     """
     df = pd.read_csv(
         filepath,
         header=None,
         names=['Date', 'Time', 'Price', 'Volume', 'OI'],
     )
-    df['Datetime'] = pd.to_datetime(
-        df['Date'].astype(str) + ' ' + df['Time']
-    )
-    # Last tick per second
-    df = df.groupby('Datetime').last().reset_index()
-    return df[['Datetime', 'Price', 'Volume', 'OI']]
+    timestamps = pd.to_datetime(df['Date'].astype(str) + ' ' + df['Time'])
+    df['Second'] = (
+        timestamps.dt.hour * 3600
+        + timestamps.dt.minute * 60
+        + timestamps.dt.second
+    ).astype(np.int32)
+
+    # Keep the last tick observed within each second.
+    df = df.groupby('Second', as_index=False, sort=True).last()
+
+    return df[['Second', 'Price', 'Volume', 'OI']].to_numpy(dtype=np.float64, copy=False)
 
 
 # Public API
@@ -101,7 +108,7 @@ def load_futures(data_dir, trading_date, underlier):
     """
     Load the near-month continuous futures file.
 
-    Returns a DataFrame: [Datetime, Price, Volume, OI].
+    Returns a NumPy array: [Second, Price, Volume, OI].
     """
     filepath = os.path.join(
         data_dir,
@@ -123,7 +130,7 @@ def load_options(data_dir, trading_date, underlier, requirements=None):
         {"expiry_filter": "221103"}    → that exact expiry
 
     Returns
-    options_dict : dict  - {(strike, option_type): DataFrame}
+    options_dict : dict  - {(strike, option_type): NumPy array}
     expiry_str   : str   - the YYMMDD expiry that was selected (or None)
     """
     if requirements is None:
